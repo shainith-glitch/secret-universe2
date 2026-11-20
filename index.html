@@ -3,22 +3,15 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Secret Universe</title>
+<title>Ultra Realistic Universe</title>
 
 <style>
-* { box-sizing: border-box; }
-
 body {
     margin: 0;
     overflow: hidden;
-    background: #02010c;
+    background: #000;
     color: white;
-    font-family: Arial, sans-serif;
-}
-
-#universe {
-    position: fixed;
-    inset: 0;
+    font-family: Arial;
 }
 
 h1 {
@@ -26,91 +19,67 @@ h1 {
     top: 10px;
     width: 100%;
     text-align: center;
-    color: #d9c5ff;
-    text-shadow: 0 0 15px #9b5cff;
+    color: #b8dfff;
+    text-shadow: 0 0 15px #168cff;
     pointer-events: none;
 }
 
 #info {
     position: fixed;
-    top: 85px;
+    top: 75px;
     left: 15px;
-    max-width: 230px;
-    padding: 14px;
-    border: 1px solid #9b70ff;
+    background: #061329dd;
+    border: 1px solid #399cff;
     border-radius: 12px;
-    background: #100b29dd;
+    padding: 15px;
+    width: 200px;
     display: none;
 }
 
 button {
-    border: 1px solid #b69aff;
-    background: #25134d;
+    background: #102e56;
     color: white;
+    border: 1px solid #559fff;
     padding: 10px 14px;
     border-radius: 20px;
-    cursor: pointer;
     margin: 4px;
+    cursor: pointer;
 }
 
 #controls {
     position: fixed;
     bottom: 15px;
-    left: 0;
-    right: 0;
+    width: 100%;
     text-align: center;
 }
 
-#move {
+#loading {
     position: fixed;
-    right: 12px;
-    bottom: 100px;
-    display: grid;
-    grid-template-columns: repeat(3, 45px);
-    gap: 4px;
-}
-
-#move button {
-    padding: 12px 5px;
-    margin: 0;
-}
-
-#help {
-    position: fixed;
-    bottom: 75px;
-    left: 12px;
-    font-size: 12px;
-    color: #d8caff;
+    top: 50%;
+    width: 100%;
+    text-align: center;
+    color: #8fcaff;
 }
 </style>
 </head>
 
 <body>
 
-<div id="universe"></div>
+<h1>ULTRA REALISTIC UNIVERSE</h1>
 
-<h1>🌌 SECRET UNIVERSE 🌌</h1>
+<div id="loading">Preparing your universe...</div>
 
 <div id="info">
-    <h3 id="planetName">Planet</h3>
-    <p id="planetText"></p>
-    <button onclick="closeInfo()">Close</button>
-</div>
-
-<div id="help">Drag to explore • Tap a planet to learn</div>
-
-<div id="move">
-    <span></span>
-    <button onclick="moveShip(0,1)">⬆️</button>
-    <span></span>
-    <button onclick="moveShip(-1,0)">⬅️</button>
-    <button onclick="moveShip(0,-1)">⬇️</button>
-    <button onclick="moveShip(1,0)">➡️</button>
+    <h3 id="planetName"></h3>
+    <p id="planetDescription"></p>
+    <button onclick="document.getElementById('info').style.display='none'">
+        Close
+    </button>
 </div>
 
 <div id="controls">
-    <button onclick="startTour()">🚀 Start Tour</button>
-    <button onclick="resetView()">🌍 Reset View</button>
+    <button onclick="startTour()">🚀 Space Tour</button>
+    <button onclick="resetView()">Reset View</button>
 </div>
 
 <script type="module">
@@ -118,128 +87,143 @@ button {
 import * as THREE from
 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js';
 
+// SCENE
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x02010c);
+scene.background = new THREE.Color(0x000008);
 
+// CAMERA
 const camera = new THREE.PerspectiveCamera(
-    60, window.innerWidth / window.innerHeight, 0.1, 2000
+    60,
+    window.innerWidth / window.innerHeight,
+    0.1,
+    2000
 );
 
-camera.position.set(0, 35, 75);
+camera.position.set(0, 35, 85);
 
-const renderer = new THREE.WebGLRenderer({antialias:true});
+// RENDERER
+const renderer = new THREE.WebGLRenderer({
+    antialias: true
+});
+
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-document.getElementById("universe").appendChild(renderer.domElement);
+renderer.outputColorSpace = THREE.SRGBColorSpace;
 
-// LIGHTS
-scene.add(new THREE.AmbientLight(0xffffff, 1.4));
+document.body.appendChild(renderer.domElement);
 
-const sunLight = new THREE.PointLight(0xffffff, 3, 500);
+// LIGHT
+scene.add(new THREE.AmbientLight(0xffffff, 0.18));
+
+const sunLight = new THREE.PointLight(0xffffff, 180, 500);
 scene.add(sunLight);
 
-// SUN
-const sun = new THREE.Mesh(
-    new THREE.SphereGeometry(4, 48, 48),
-    new THREE.MeshBasicMaterial({color: 0xffaa22})
-);
-scene.add(sun);
+// TEXTURE LOADER
+const loader = new THREE.TextureLoader();
 
-const sunGlow = new THREE.PointLight(0xffaa44, 3, 100);
-scene.add(sunGlow);
+function loadTexture(name) {
+    const texture = loader.load(
+        'https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/textures/planets/' + name
+    );
+
+    texture.colorSpace = THREE.SRGBColorSpace;
+    return texture;
+}
 
 // STARFIELD
-const starGeometry = new THREE.BufferGeometry();
 const starPositions = [];
 
-for(let i=0;i<2500;i++){
+for(let i = 0; i < 5000; i++) {
     starPositions.push(
-        (Math.random()-0.5)*500,
-        (Math.random()-0.5)*300,
-        (Math.random()-0.5)*500
+        (Math.random() - 0.5) * 600,
+        (Math.random() - 0.5) * 400,
+        (Math.random() - 0.5) * 600
     );
 }
 
+const starGeometry = new THREE.BufferGeometry();
+
 starGeometry.setAttribute(
     'position',
-    new THREE.Float32BufferAttribute(starPositions,3)
+    new THREE.Float32BufferAttribute(starPositions, 3)
 );
 
 const stars = new THREE.Points(
     starGeometry,
-    new THREE.PointsMaterial({color:0xffffff,size:0.7})
+    new THREE.PointsMaterial({
+        color: 0xffffff,
+        size: 0.6
+    })
 );
 
 scene.add(stars);
 
-// MILKY WAY GALAXY
-const galaxyGeometry = new THREE.BufferGeometry();
-const galaxyPositions = [];
-const galaxyColors = [];
-
-for(let i=0;i<7000;i++){
-    const arm = Math.floor(Math.random()*4);
-    const radius = 8 + Math.random()*65;
-    const angle = radius*0.12 + arm*Math.PI/2 +
-                  (Math.random()-0.5)*0.5;
-
-    galaxyPositions.push(
-        Math.cos(angle)*radius,
-        (Math.random()-0.5)*5,
-        Math.sin(angle)*radius
-    );
-
-    galaxyColors.push(0.6+Math.random()*0.4,
-                      0.3+Math.random()*0.5,1);
-}
-
-galaxyGeometry.setAttribute(
-    'position',
-    new THREE.Float32BufferAttribute(galaxyPositions,3)
-);
-
-galaxyGeometry.setAttribute(
-    'color',
-    new THREE.Float32BufferAttribute(galaxyColors,3)
-);
-
-const galaxy = new THREE.Points(
-    galaxyGeometry,
-    new THREE.PointsMaterial({
-        size:0.45,
-        vertexColors:true,
-        transparent:true,
-        opacity:0.8
+// SUN
+const sun = new THREE.Mesh(
+    new THREE.SphereGeometry(5, 64, 64),
+    new THREE.MeshBasicMaterial({
+        map: loadTexture('sun.jpg')
     })
 );
 
-galaxy.position.set(0,-45,-90);
-scene.add(galaxy);
+scene.add(sun);
+
+const sunGlow = new THREE.Sprite(
+    new THREE.SpriteMaterial({
+        map: createGlow(),
+        color: 0xffaa44,
+        transparent: true,
+        blending: THREE.AdditiveBlending
+    })
+);
+
+sunGlow.scale.set(22, 22, 1);
+scene.add(sunGlow);
+
+function createGlow() {
+    const canvas = document.createElement('canvas');
+    canvas.width = 128;
+    canvas.height = 128;
+
+    const ctx = canvas.getContext('2d');
+    const gradient = ctx.createRadialGradient(64,64,2,64,64,64);
+
+    gradient.addColorStop(0,'rgba(255,220,120,0.8)');
+    gradient.addColorStop(0.3,'rgba(255,130,20,0.3)');
+    gradient.addColorStop(1,'rgba(255,100,0,0)');
+
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0,0,128,128);
+
+    return new THREE.CanvasTexture(canvas);
+}
 
 // PLANETS
 const planets = [];
+
 const planetData = [
-    ["Mercury",0xaaa9a5,7,0.7,"The smallest planet in our solar system."],
-    ["Venus",0xe6ad69,10,1.1,"Venus is the hottest planet."],
-    ["Earth",0x2288ff,14,1.2,"Our beautiful home planet."],
-    ["Mars",0xe65b36,18,0.9,"Mars is known as the Red Planet."],
-    ["Jupiter",0xd9a46c,25,3.1,"Jupiter is the largest planet."],
-    ["Saturn",0xe5cf9a,34,2.6,"Saturn is famous for its beautiful rings."],
-    ["Uranus",0x79d9dc,43,1.8,"Uranus rotates on its side."],
-    ["Neptune",0x315bea,52,1.8,"Neptune is a distant blue planet."]
+    ['Mercury','mercury.jpg',7,0.8,'The smallest planet in our solar system.'],
+    ['Venus','venus_surface.jpg',11,1.3,'A very hot planet with a thick atmosphere.'],
+    ['Earth','earth_atmos_2048.jpg',16,1.5,'Our home planet, with oceans and continents.'],
+    ['Mars','mars_1k_color.jpg',22,1.1,'The red planet.'],
+    ['Jupiter','jupiter.jpg',31,3.5,'The largest planet in our solar system.'],
+    ['Saturn','saturn.jpg',42,3,'Famous for its spectacular rings.'],
+    ['Uranus','uranus.jpg',52,2.1,'An ice giant that rotates on its side.'],
+    ['Neptune','neptune.jpg',62,2.1,'A distant blue ice giant.']
 ];
 
-planetData.forEach((data,index)=>{
-    const [name,color,distance,size,description] = data;
+planetData.forEach((data,index) => {
+
+    const [name,texture,distance,size,description] = data;
 
     const group = new THREE.Group();
     scene.add(group);
 
     const planet = new THREE.Mesh(
-        new THREE.SphereGeometry(size,32,32),
+        new THREE.SphereGeometry(size,64,64),
         new THREE.MeshStandardMaterial({
-            color:color,
-            roughness:0.8
+            map: loadTexture(texture),
+            roughness: 0.9
         })
     );
 
@@ -248,26 +232,46 @@ planetData.forEach((data,index)=>{
 
     planet.userData = {name,description};
 
+    // EARTH CLOUDS
+    if(name === 'Earth') {
+        const clouds = new THREE.Mesh(
+            new THREE.SphereGeometry(size*1.015,64,64),
+            new THREE.MeshStandardMaterial({
+                map: loadTexture('earth_clouds_1024.png'),
+                transparent: true,
+                opacity: 0.55,
+                depthWrite: false
+            })
+        );
+
+        clouds.position.copy(planet.position);
+        group.add(clouds);
+        planet.userData.clouds = clouds;
+    }
+
     // SATURN RINGS
-    if(name==="Saturn"){
+    if(name === 'Saturn') {
         const ring = new THREE.Mesh(
-            new THREE.RingGeometry(3.2,5.2,80),
-            new THREE.MeshBasicMaterial({
-                color:0xd9c19a,
-                side:THREE.DoubleSide
+            new THREE.RingGeometry(size*1.3,size*2.3,128),
+            new THREE.MeshStandardMaterial({
+                color: 0xc5aa83,
+                side: THREE.DoubleSide,
+                transparent: true,
+                opacity: 0.85
             })
         );
 
         ring.rotation.x = -Math.PI/2.5;
-        planet.add(ring);
+        ring.position.copy(planet.position);
+        group.add(ring);
     }
 
-    // ORBIT PATH
+    // ORBIT
     const orbit = new THREE.Mesh(
         new THREE.RingGeometry(distance-0.04,distance+0.04,128),
         new THREE.MeshBasicMaterial({
-            color:0x514477,
-            side:THREE.DoubleSide
+            color: 0x33445c,
+            side: THREE.DoubleSide
         })
     );
 
@@ -277,19 +281,29 @@ planetData.forEach((data,index)=>{
     planets.push({group,planet,index});
 });
 
+// EARTH MOON
+const moon = new THREE.Mesh(
+    new THREE.SphereGeometry(0.5,48,48),
+    new THREE.MeshStandardMaterial({
+        map: loadTexture('moon_1024.jpg')
+    })
+);
+
+scene.add(moon);
+
 // SHOOTING STARS
 const shootingStars = [];
 
-for(let i=0;i<8;i++){
+for(let i=0;i<12;i++) {
     const star = new THREE.Mesh(
-        new THREE.SphereGeometry(0.18,8,8),
+        new THREE.SphereGeometry(0.12,8,8),
         new THREE.MeshBasicMaterial({color:0xffffff})
     );
 
     star.position.set(
-        (Math.random()-0.5)*120,
-        Math.random()*60,
-        (Math.random()-0.5)*120
+        Math.random()*100-50,
+        Math.random()*50,
+        Math.random()*100-50
     );
 
     scene.add(star);
@@ -299,146 +313,133 @@ for(let i=0;i<8;i++){
 // SPACESHIP
 const ship = new THREE.Group();
 
-const body = new THREE.Mesh(
-    new THREE.ConeGeometry(1,4,12),
+const shipBody = new THREE.Mesh(
+    new THREE.ConeGeometry(0.8,3.5,16),
     new THREE.MeshStandardMaterial({
-        color:0xc9d9ff,
-        metalness:0.7,
-        roughness:0.3
+        color:0xc5d8ed,
+        metalness:0.8,
+        roughness:0.25
     })
 );
 
-body.rotation.x = Math.PI/2;
-ship.add(body);
+shipBody.rotation.x = Math.PI/2;
+ship.add(shipBody);
 
-const wing = new THREE.Mesh(
-    new THREE.BoxGeometry(4,0.2,1),
-    new THREE.MeshStandardMaterial({color:0x7855ff})
-);
-
-ship.add(wing);
-
-const flame = new THREE.Mesh(
-    new THREE.ConeGeometry(0.5,2,12),
-    new THREE.MeshBasicMaterial({color:0xff6600})
-);
-
-flame.position.z = 2.5;
-flame.rotation.x = -Math.PI/2;
-ship.add(flame);
-
-ship.position.set(0,4,10);
+ship.position.set(0,5,12);
 scene.add(ship);
-
-// MOVE SPACESHIP
-window.moveShip = function(x,z){
-    ship.position.x += x*2;
-    ship.position.z -= z*2;
-};
 
 // PLANET INFORMATION
 const raycaster = new THREE.Raycaster();
 const pointer = new THREE.Vector2();
 
-renderer.domElement.addEventListener("click",(event)=>{
-    pointer.x = (event.clientX/window.innerWidth)*2-1;
+renderer.domElement.addEventListener('click',event => {
+
+    pointer.x = event.clientX/window.innerWidth*2-1;
     pointer.y = -(event.clientY/window.innerHeight)*2+1;
 
     raycaster.setFromCamera(pointer,camera);
 
     const hits = raycaster.intersectObjects(
-        planets.map(p=>p.planet)
+        planets.map(p => p.planet)
     );
 
-    if(hits.length){
+    if(hits.length) {
         const data = hits[0].object.userData;
 
-        document.getElementById("planetName").textContent=data.name;
-        document.getElementById("planetText").textContent=data.description;
-        document.getElementById("info").style.display="block";
+        document.getElementById('planetName').textContent = data.name;
+        document.getElementById('planetDescription').textContent = data.description;
+        document.getElementById('info').style.display = 'block';
     }
 });
 
-window.closeInfo = function(){
-    document.getElementById("info").style.display="none";
-};
-
 // CAMERA DRAG
-let dragging=false;
-let lastX=0;
-let lastY=0;
+let dragging = false;
+let previousX = 0;
+let previousY = 0;
 
-renderer.domElement.addEventListener("pointerdown",e=>{
-    dragging=true;
-    lastX=e.clientX;
-    lastY=e.clientY;
+renderer.domElement.addEventListener('pointerdown',e => {
+    dragging = true;
+    previousX = e.clientX;
+    previousY = e.clientY;
 });
 
-window.addEventListener("pointerup",()=>dragging=false);
+window.addEventListener('pointerup',() => dragging = false);
 
-renderer.domElement.addEventListener("pointermove",e=>{
-    if(!dragging)return;
+renderer.domElement.addEventListener('pointermove',e => {
+    if(!dragging) return;
 
-    const dx=e.clientX-lastX;
-    const dy=e.clientY-lastY;
+    scene.rotation.y += (e.clientX-previousX)*0.003;
+    scene.rotation.x += (e.clientY-previousY)*0.003;
 
-    scene.rotation.y += dx*0.003;
-    scene.rotation.x += dy*0.003;
-
-    lastX=e.clientX;
-    lastY=e.clientY;
+    previousX = e.clientX;
+    previousY = e.clientY;
 });
 
 // ZOOM
-renderer.domElement.addEventListener("wheel",e=>{
+renderer.domElement.addEventListener('wheel',e => {
     camera.position.z += e.deltaY*0.04;
-    camera.position.z = THREE.MathUtils.clamp(
-        camera.position.z,12,150
-    );
+    camera.position.z = THREE.MathUtils.clamp(camera.position.z,12,150);
 });
 
 // TOUR
-let touring=false;
+let touring = false;
 
-window.startTour=function(){
-    touring=true;
+window.startTour = function() {
+    touring = true;
 };
 
-window.resetView=function(){
-    touring=false;
-    camera.position.set(0,35,75);
+window.resetView = function() {
+    touring = false;
+    camera.position.set(0,35,85);
     camera.lookAt(0,0,0);
     scene.rotation.set(0,0,0);
 };
 
 // ANIMATION
-function animate(){
+function animate() {
+
     requestAnimationFrame(animate);
 
-    planets.forEach((p,i)=>{
-        p.group.rotation.y += 0.0015 + i*0.0002;
-        p.planet.rotation.y += 0.01;
-    });
+    sun.rotation.y += 0.001;
 
-    sun.rotation.y += 0.002;
-    galaxy.rotation.y += 0.0005;
+    planets.forEach(p => {
+        p.group.rotation.y += 0.001;
+        p.planet.rotation.y += 0.003;
 
-    ship.rotation.y += 0.003;
-    flame.scale.y = 0.8 + Math.random()*0.5;
-
-    shootingStars.forEach(star=>{
-        star.position.x -= 0.35;
-        star.position.y -= 0.12;
-
-        if(star.position.x < -70){
-            star.position.x=70;
-            star.position.y=Math.random()*60;
+        if(p.planet.userData.clouds) {
+            p.planet.userData.clouds.rotation.y += 0.0005;
         }
     });
 
-    if(touring){
-        camera.position.x += (Math.sin(Date.now()*0.0002)*45-camera.position.x)*0.005;
-        camera.position.z += (65-camera.position.z)*0.005;
+    // MOON ORBIT
+    const earth = planets[2].planet;
+    const earthPosition = new THREE.Vector3();
+    earth.getWorldPosition(earthPosition);
+
+    const time = Date.now()*0.0005;
+
+    moon.position.set(
+        earthPosition.x + Math.cos(time)*3,
+        earthPosition.y,
+        earthPosition.z + Math.sin(time)*3
+    );
+
+    // SHOOTING STARS
+    shootingStars.forEach(star => {
+        star.position.x -= 0.25;
+        star.position.y -= 0.1;
+
+        if(star.position.x < -70) {
+            star.position.x = 70;
+            star.position.y = Math.random()*50;
+        }
+    });
+
+    ship.rotation.y += 0.002;
+
+    if(touring) {
+        camera.position.x = Math.sin(Date.now()*0.0002)*50;
+        camera.position.z = 85;
         camera.lookAt(0,0,0);
     }
 
@@ -447,9 +448,11 @@ function animate(){
 
 animate();
 
+document.getElementById('loading').style.display = 'none';
+
 // RESIZE
-window.addEventListener("resize",()=>{
-    camera.aspect=window.innerWidth/window.innerHeight;
+window.addEventListener('resize',() => {
+    camera.aspect = window.innerWidth/window.innerHeight;
     camera.updateProjectionMatrix();
     renderer.setSize(window.innerWidth,window.innerHeight);
 });
