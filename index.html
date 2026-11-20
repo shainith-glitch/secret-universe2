@@ -232,22 +232,51 @@ planetData.forEach((data,index) => {
 
     planet.userData = {name,description};
 
-    // EARTH CLOUDS
     if(name === 'Earth') {
-        const clouds = new THREE.Mesh(
-            new THREE.SphereGeometry(size*1.015,64,64),
-            new THREE.MeshStandardMaterial({
-                map: loadTexture('earth_clouds_1024.png'),
-                transparent: true,
-                opacity: 0.55,
-                depthWrite: false
-            })
-        );
 
-        clouds.position.copy(planet.position);
-        group.add(clouds);
-        planet.userData.clouds = clouds;
-    }
+    // REALISTIC CLOUD LAYER
+    const clouds = new THREE.Mesh(
+        new THREE.SphereGeometry(size * 1.012, 64, 64),
+        new THREE.MeshStandardMaterial({
+            map: loadTexture('earth_clouds_1024.png'),
+            transparent: true,
+            opacity: 0.65,
+            depthWrite: false
+        })
+    );
+
+    clouds.position.copy(planet.position);
+    group.add(clouds);
+
+    // BLUE ATMOSPHERE
+    const atmosphere = new THREE.Mesh(
+        new THREE.SphereGeometry(size * 1.07, 64, 64),
+        new THREE.MeshBasicMaterial({
+            color: 0x168cff,
+            transparent: true,
+            opacity: 0.12,
+            side: THREE.BackSide
+        })
+    );
+
+    atmosphere.position.copy(planet.position);
+    group.add(atmosphere);
+
+    // CITY LIGHTS ON NIGHT SIDE
+    const cityLights = new THREE.Mesh(
+        new THREE.SphereGeometry(size * 1.003, 64, 64),
+        new THREE.MeshBasicMaterial({
+            map: loadTexture('earth_lights_2048.png'),
+            transparent: true,
+            blending: THREE.AdditiveBlending
+        })
+    );
+
+    cityLights.position.copy(planet.position);
+    group.add(cityLights);
+
+    planet.userData.clouds = clouds;
+}
 
     // SATURN RINGS
     if(name === 'Saturn') {
